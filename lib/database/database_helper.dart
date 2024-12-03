@@ -1,6 +1,8 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:groupprojfinal/models/dealership.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -10,6 +12,9 @@ class DatabaseHelper {
   DatabaseHelper._init();
 
   Future<Database> get database async {
+    // Initialize the databaseFactory to use FFI
+    databaseFactory = databaseFactoryFfi;
+
     if (_database != null) return _database!;
 
     _database = await _initDB('dealerships.db');
@@ -29,12 +34,12 @@ class DatabaseHelper {
     const textType = 'TEXT NOT NULL';
 
     await db.execute('''CREATE TABLE dealerships (
-    id $idType,
-    name $textType,
-    streetAddress $textType,
-    city $textType,  
-    postalCode $textType  
-  )''');
+      id $idType,
+      name $textType,
+      streetAddress $textType,
+      city $textType,  
+      postalCode $textType  
+    )''');
   }
 
   // Insert a dealership
@@ -63,6 +68,8 @@ class DatabaseHelper {
         where: 'id = ?', whereArgs: [dealership.id]);
   }
 }
+
+
 
 
 
