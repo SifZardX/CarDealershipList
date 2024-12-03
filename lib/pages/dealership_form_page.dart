@@ -3,111 +3,125 @@ import 'package:groupprojfinal/database/database_helper.dart';
 import 'package:groupprojfinal/models/dealership.dart';
 
 class DealershipFormPage extends StatefulWidget {
+  final Dealership? dealership; // Pass dealership for editing if available
+
+  // Constructor to allow either creating or editing a dealership
+  DealershipFormPage({this.dealership});
+
   @override
   _DealershipFormPageState createState() => _DealershipFormPageState();
 }
 
 class _DealershipFormPageState extends State<DealershipFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _streetAddressController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _postalCodeController = TextEditingController();
+
+  late String _name;
+  late String _streetAddress;
+  late String _city;
+  late String _postalCode;
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _streetAddressController.dispose();
-    _cityController.dispose();
-    _postalCodeController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+
+    // Initialize fields with the passed dealership data (if editing)
+    if (widget.dealership != null) {
+      _name = widget.dealership!.name;
+      _streetAddress = widget.dealership!.streetAddress;
+      _city = widget.dealership!.city;
+      _postalCode = widget.dealership!.postalCode;
+    } else {
+      _name = '';
+      _streetAddress = '';
+      _city = '';
+      _postalCode = '';
+    }
   }
 
-  // Submit function for saving the dealership data to the database
-  void _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      final newDealership = Dealership(
-        name: _nameController.text,
-        streetAddress: _streetAddressController.text,
-        city: _cityController.text,
-        postalCode: _postalCodeController.text,
+  // Submit the form (either insert or update)
+  Future<void> _submitForm() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      _formKey.currentState?.save();
+
+      final dealership = Dealership(
+        id: widget.dealership?.id, // If editing, pass the existing ID
+        name: _name,
+        streetAddress: _streetAddress,
+        city: _city,
+        postalCode: _postalCode,
       );
 
-      // Insert the new dealership into the database
-      final int result = await DatabaseHelper.instance.insertDealership(newDealership);
-
-      if (result > 0) {
-        // If successful, return to the previous page with success status
-        Navigator.pop(context, true);
+      // Insert or update the dealership
+      if (widget.dealership == null) {
+        await DatabaseHelper.instance.insertDealership(dealership);
       } else {
-        // If something goes wrong, show an error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add dealership.')),
-        );
+        await DatabaseHelper.instance.updateDealership(dealership);
       }
+
+      Navigator.pop(context, true); // Return to the dealership list
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Add Dealership')),
+      appBar: AppBar(
+        title: Text(widget.dealership == null ? 'Add Dealership' : 'Edit Dealership'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Dealership Name Field
               TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Dealership Name'),
+                initialValue: _name,
+                decoration: const InputDecoration(labelText: 'Dealership Name'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
+                    return 'Please enter the dealership name';
                   }
                   return null;
                 },
+                onSaved: (value) => _name = value!,
               ),
-              // Street Address Field
               TextFormField(
-                controller: _streetAddressController,
-                decoration: InputDecoration(labelText: 'Street Address'),
+                initialValue: _streetAddress,
+                decoration: const InputDecoration(labelText: 'Street Address'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a street address';
+                    return 'Please enter the street address';
                   }
                   return null;
                 },
+                onSaved: (value) => _streetAddress = value!,
               ),
-              // City Field
               TextFormField(
-                controller: _cityController,
-                decoration: InputDecoration(labelText: 'City'),
+                initialValue: _city,
+                decoration: const InputDecoration(labelText: 'City'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a city';
+                    return 'Please enter the city';
                   }
                   return null;
                 },
+                onSaved: (value) => _city = value!,
               ),
-              // Postal Code Field
               TextFormField(
-                controller: _postalCodeController,
-                decoration: InputDecoration(labelText: 'Postal Code'),
+                initialValue: _postalCode,
+                decoration: const InputDecoration(labelText: 'Postal Code'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a postal code';
+                    return 'Please enter the postal code';
                   }
                   return null;
                 },
+                onSaved: (value) => _postalCode = value!,
               ),
-              SizedBox(height: 20),
-              // Submit Button
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _submitForm,
-                child: Text('Submit'),
+                child: Text(widget.dealership == null ? 'Add Dealership' : 'Update Dealership'),
               ),
             ],
           ),
