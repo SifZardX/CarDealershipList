@@ -11,5 +11,3 @@ class Localization {
         : 0];
   }
 }
-
-
